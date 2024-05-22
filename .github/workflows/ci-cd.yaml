@@ -1,4 +1,4 @@
-name: CI/CD PipeLine
+name: CI/CD Pipeline
 
 on:
   push:
@@ -12,18 +12,22 @@ jobs:
   build:
     name: Build Frontend Artifact
     runs-on: ubuntu-latest
+    needs: audit
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v3
         with:
           node-version: 16.x
           cache: "npm"
 
-      - run: |
-          cd frontend 
+      - name: Install Dependencies
+        run: |
+          cd frontend
           npm i
 
-      - run: |
+      - name: Build artifact
+        run: |
           cd frontend
           npm run build
 
@@ -35,3 +39,31 @@ jobs:
       #   uses: bitovi/github-actions-react-to-github-pages@v1.2.2
       #   with:
       #     path: build # change to your build folder
+
+  audit:
+    name: Audit Frontend Deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the audit on production deps only
+        run: npm audit --omit=dev
+
+  lint:
+    name: 🧼 Ensure Code Style
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: "npm"
+
+      - name: Install deps
+        run: cd frontend && npm i
+
+      - name: 😂 Lint code
+        run: cd frontend && npm run lint
